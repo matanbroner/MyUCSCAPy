@@ -1,6 +1,6 @@
 ## MyUCSC APy
 
-![logo photo](src/assets/images/logo.jpg)
+![logo photo](./src/assets/images/logo.png)
 
 A robust API for interaction with the MyUCSC enrollment system. 
 Very much still a work in progress.
