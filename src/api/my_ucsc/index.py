@@ -3,9 +3,10 @@ from ...assets.elements import my_ucsc_elements
 from .modules.enrollment import EnrollmentModule
 
 class MyUCSCApi:
-    def __init__(self, driver):
+    def __init__(self, driver, config={}):
         self.driver = driver
         self.logged_in = False
+        self.config = config
         self.initialize()
 
     '''
@@ -14,7 +15,7 @@ class MyUCSCApi:
     '''
     def initialize(self):
         self.modules = {
-            'enrollment': EnrollmentModule(self.driver)
+            'enrollment': EnrollmentModule(self.driver, self.config["enrollment"])
         }
 
     '''
@@ -73,7 +74,10 @@ class MyUCSCApi:
         tfa_frame = self.driver.find_element_by_id(my_ucsc_elements["duo_iframe"])
         self.driver.switch_to.frame(tfa_frame)
         auth_method = self.driver.find_element_by_xpath("//*[@class=\"row-label {}-label\"]".format(method))
-        auth_method.find_element_by_class_name("positive").click()
+        remember_me = self.driver.find_element_by_name(my_ucsc_elements["duo_checkbox"]) \
+            .click()
+        auth_method.find_element_by_class_name("positive") \
+            .click()
         self.driver.switch_to.default_content()
 
     '''

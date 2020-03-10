@@ -1,22 +1,41 @@
-from src.driver.selenium import generate_driver
-from src.api.my_ucsc.index import MyUCSCApi
-
-driver = generate_driver()
+from src.driver.selenium        import generate_driver
+from src.api.my_ucsc.index      import MyUCSCApi
+from src.messenger.index         import Messenger
 
 user = 'mbroner'
 password = 'ma97ro99ra14'
 
 course = {
-    "name": "Calculus for Science, Engineering, and Mathematics",
-    "course_id": "62935",
+    "name": "Mathematical Methods for Engineers I",
+    "course_id": "62602",
     "disc_id": None,
-    "lab_id": "62937",
+    "lab_id": None,
     "status": "Open"
 }
 
-api = MyUCSCApi(driver)
+config = {
+    "enrollment": {
+        "quarter": "2020 Spring Quarter"
+    }
+}
+
+msg = Messenger({
+    "phone": "4084100240",
+    "provider": "tmobile"
+})
+msg.login("mbroner@ucsc.edu", "ra14ro99ma97")
+
+driver = generate_driver()
+
+api = MyUCSCApi(driver, config)
 api.log_in(user, password)
 api.navigate_page("Enrollment")
 enrollment_module = api.module('enrollment')
-enrollment_module.add_to_cart(course)
-enrollment_module.enroll(course)
+try:
+    spots, course_link = enrollment_module.check_open_spots(course)
+    taken, total = spots
+    msg.inform_course_open(course, course_link, taken, total)
+except Exception as e:
+    print(e)
+    pass
+# enrollment_module.enroll(course)

@@ -1,9 +1,31 @@
-def match_table_row_cell_value(table, cell_index, value):
-    rows_cells = table_cells(table)
-    for row, cells in rows_cells:
-        if value in cells[cell_index].text: # allows for "buffer" data in cell
-            return (row, cells)
-    return (None, None)
+import re
+import urllib.request
+
+def shorten_url(url):
+    apiurl = "http://tinyurl.com/api-create.php?url="
+    tinyurl = urllib.request.urlopen(apiurl + url).read()
+    return tinyurl.decode("utf-8")
+
+def remove_tags(text):
+    copy = "{}".format(text)
+    TAG_RE = re.compile(r'<[^>]+>')
+    return TAG_RE.sub('', copy)
+
+def strip_ws(text):
+    return re.sub('\s+',' ',text)
+
+def match_table_row_cell_value(table, cell_index, value, path=None, contains=None):
+    if not path:
+        path = 'td/div/*'
+    if not contains:
+        contains = "text()"
+    try:
+        row = table.find_element_by_xpath("//tr[{}[contains({}, '{}')]]".format(path, contains, value))
+        cells = row.find_elements_by_css_selector("td")
+        return (row, cells)
+    except Exception as e:
+        print(str(e))
+        return (None, None)
 
 def table_cells(table):
     cell_rows = []

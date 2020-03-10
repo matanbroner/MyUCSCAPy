@@ -3,5 +3,5 @@ import chromedriver_binary
 
 def generate_driver(config=None):
     driver = webdriver.Chrome()
-    driver.implicitly_wait(20)
+    driver.implicitly_wait(15)
     return driver

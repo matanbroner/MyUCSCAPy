@@ -8,8 +8,9 @@ from selenium.webdriver.common.keys import Keys
 
 
 class EnrollmentModule(ApiModule):
-    def __init__(self, driver):
+    def __init__(self, driver, config):
         super().__init__(driver, my_ucsc_urls["enrollment_page"])
+        self.config = config
     
     '''
     Searches for courses by name and returns an array of courses
@@ -55,11 +56,13 @@ class EnrollmentModule(ApiModule):
     returns: tuple (int enrolled, int total)
     '''  
     def check_open_spots(self, course):
-        course_block = search_course_by_id(course)
+        course_block = self.search_course_by_id(course)
         if not course_block:
             raise self._error("Course '{} - {}' Not Found".format(course["name"], course["course_id"]))
         enrollment_text = course_block.find_element_by_xpath(my_ucsc_elements["open_spots_text"]).text
-        return tuple(extract_numbers(enrollment_text))
+        course_link = course_block.find_element_by_id("class_id_{}".format(course["course_id"])) \
+            .get_attribute("href")
+        return tuple(extract_numbers(enrollment_text)), course_link
         
     '''
     Adds a course to the student's shopping cart if course is found
@@ -73,7 +76,7 @@ class EnrollmentModule(ApiModule):
         course_block.find_element_by_name("cart[]") \
             .find_element_by_css_selector("a") \
                 .click()
-        if not self._error_is_present("This class is already in your Shopping Cart"):
+        if not self._text_is_present("This class is already in your Shopping Cart"):
             verify_open = lambda self, cells: self._section_is_open(cells)
             self._select_enrollment_row(my_ucsc_elements["discussion_sections_table"], course["disc_id"], [verify_open])
             self._select_enrollment_row(my_ucsc_elements["lab_sections_table"], course["lab_id"], [verify_open])
@@ -91,17 +94,20 @@ class EnrollmentModule(ApiModule):
     @param dict course
     returns: None
     '''  
-    def enroll(self, course):
+    def enroll(self, course): 
         super().change_tab("Enrollment Shopping Cart")
         self._shift_to_content_iframe()
+        self._select_term()
         find_checkbox = lambda cell: cell.find_element_by_class_name("PSCHECKBOX")
-        self._select_enrollment_row(my_ucsc_elements["shopping_cart_table"], course["course_id"], [], find_checkbox)
+        paren_id = "({})".format(course["course_id"])
+        self._select_enrollment_row(my_ucsc_elements["shopping_cart_table"], paren_id, [], find_checkbox, "td/div/span/a", '.')
         enroll_next = self.driver.find_element_by_name(my_ucsc_elements["enroll_table_button"]) \
             .click()
-        if self._error_is_present("You do not have a valid enrollment appointment at this time."):
+        if self._text_is_present("You do not have a valid enrollment appointment at this time."):
             raise self._error("Unable To Enroll Due To Invalid Appointment Time")
-        finalize_enroll = self.driver.find_element_by_name(my_ucsc_elements["finalize_enroll_button"]) \
+        finalize_enroll = self.driver.find_element_by_xpath(my_ucsc_elements["finalize_enroll_button"]) \
             .click()
+        self._verify_enrollment_status(course)
 
     '''
     Selects a table row by providing a valid table's <tbody> xpath and an ID, should be run through add_to_cart() or enroll()
@@ -113,11 +119,11 @@ class EnrollmentModule(ApiModule):
     @param [f()] validators
     returns: None
     ''' 
-    def _select_enrollment_row(self, table_path, select_id, validators=[], input_selected=None):
+    def _select_enrollment_row(self, table_path, select_id, validators=[], input_selected=None, cell_value_path=None, contains_elem=None):
         if not select_id:
             return
         table = self.driver.find_element_by_xpath(table_path)
-        row, cells = match_table_row_cell_value(table, 1, select_id)
+        row, cells = match_table_row_cell_value(table, 1, select_id, cell_value_path, contains_elem)
         if not row:
             raise self._error("ID {} Not Found".format(select_id))
         for validator in validators:
@@ -132,8 +138,9 @@ class EnrollmentModule(ApiModule):
     
     def _verify_enrollment_status(self, course):
         table = self.driver.find_element_by_xpath(my_ucsc_elements["enroll_status_table"])
-        cell_rows = table_cells(table)
-        for cells in cell_rows:
+        cells_rows = table_cells(table)
+        for cells_row in cells_rows:
+            cells = cells_row[1]
             status_image_src = cells[2].find_element_by_css_selector("img") \
                 .get_attribute("src")
             if my_ucsc_elements["enroll_status_error_src"] in status_image_src:
@@ -151,17 +158,30 @@ class EnrollmentModule(ApiModule):
         return STATUS_OPEN_IMAGE in image_status_src
 
     '''
+    Selects the registration term as passed by the config in the contructor
+    returns: None
+    '''
+    def _select_term(self):
+        if self._text_is_present("Select Term"):
+            self._select_enrollment_row(my_ucsc_elements["select_term_table"], self.config["quarter"])
+            self.driver.find_element_by_xpath(my_ucsc_elements["select_term_button"]) \
+                .click()
+    '''
     Checks if an error message is present on the screen
     @param str message
     returns: bool
     '''
-    def _error_is_present(self, message):
+    def _text_is_present(self, message):
         try:
             self.driver.find_element_by_xpath("//*[contains(text(), '{}')]".format(message))
             return True
         except:
             return False
 
+    '''
+    Shifts to the main content iFrame located in the enrollment section
+    returns: None
+    '''
     def _shift_to_content_iframe(self):
         frame = self.driver.find_element_by_class_name(my_ucsc_elements["enrollment_iframe"])
         self.driver.switch_to.frame(frame)

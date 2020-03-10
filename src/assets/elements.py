@@ -1,5 +1,6 @@
 my_ucsc_elements = {
     'duo_iframe': 'duo_iframe',
+    'duo_checkbox': 'dampen_choice',
     'my_ucsc_iframe': 'ps_target-iframe',
     'enrollment_iframe': 'ps_target-iframe',
     'discussion_sections_table': '//*[@id="SSR_CLS_TBL_R1$scroll$0"]/tbody',
@@ -9,8 +10,10 @@ my_ucsc_elements = {
     'finalize_add_to_cart_button': 'DERIVED_CLS_DTL_NEXT_PB$280$',
     'shopping_cart_table': '//*[@id="SSR_REGFORM_VW$scroll$0"]/tbody/tr[2]/td/table/tbody',
     'enroll_table_button': 'DERIVED_REGFRM1_LINK_ADD_ENRL$291$',
-    'finalize_enroll_button': 'DERIVED_REGFRM1_SSR_PB_SUBMIT',
+    'finalize_enroll_button': '//*[@id="DERIVED_REGFRM1_SSR_PB_SUBMIT"]',
     'enroll_status_table': '//*[@id="SSR_SS_ERD_ER$scroll$0"]/tbody/tr/td/table/tbody',
     'enroll_status_error_src': 'STATUS_ERROR',
-    'open_spots_text': '//*[contains(text(), \'Enrolled\')]'
+    'open_spots_text': '//*[contains(text(), \'Enrolled\')]',
+    'select_term_table': '//*[@id="SSR_DUMMY_RECV1$scroll$0"]/tbody/tr[2]/td/table/tbody',
+    'select_term_button': '//*[@id="DERIVED_SSS_SCT_SSR_PB_GO"]'
 }
