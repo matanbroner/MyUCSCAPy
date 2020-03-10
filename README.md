@@ -1,4 +1,4 @@
-## MyUCSC APy
+# MyUCSC APy
 
 ![logo photo](./src/assets/images/logo.png)
 
